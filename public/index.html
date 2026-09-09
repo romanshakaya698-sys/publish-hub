@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PublishHub · 多平台一键发稿</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="logo">PH</span>
+      <div>
+        <h1>PublishHub</h1>
+        <p>自媒体多平台一键发稿</p>
+      </div>
+    </div>
+    <nav>
+      <button class="tab active" data-tab="library">稿件库</button>
+      <button class="tab" data-tab="accounts">账号管理</button>
+      <button class="tab" data-tab="records">发布记录</button>
+      <button class="tab" data-tab="overview">📊 发布总览</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- 稿件库 -->
+    <section id="tab-library" class="panel active">
+      <div class="toolbar">
+        <label class="btn primary" for="doc-file">＋ 上传稿件（docx / md / txt / html）</label>
+        <input type="file" id="doc-file" accept=".docx,.md,.markdown,.txt,.html,.htm" hidden />
+        <span id="upload-hint" class="hint"></span>
+      </div>
+      <div id="article-list" class="cards"></div>
+    </section>
+
+    <!-- 账号管理 -->
+    <section id="tab-accounts" class="panel">
+      <div class="notice">
+        点击「打开登录窗口」会弹出浏览器，请在其中扫码或输入账号完成登录。
+        登录态会自动保存在本机（profiles 目录），之后发稿无需重复登录。
+      </div>
+      <div id="account-list" class="cards"></div>
+    </section>
+
+    <!-- 发布记录 -->
+    <section id="tab-records" class="panel">
+      <div class="toolbar"><span class="hint">发布任务实时刷新中…</span></div>
+      <div id="record-list"></div>
+    </section>
+
+    <!-- 发布总览表格 -->
+    <section id="tab-overview" class="panel">
+      <div class="toolbar"><span class="hint">所有平台发布情况一览（自动刷新；媒体链接在稿件审核通过后由机器人自动回填）</span></div>
+      <div id="overview-table"></div>
+    </section>
+  </main>
+
+  <!-- 发布弹窗 -->
+  <div id="publish-modal" class="modal-mask" hidden>
+    <div class="modal">
+      <div class="modal-head">
+        <h3>一键发稿</h3>
+        <button class="icon-btn" id="modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label>稿件</label>
+          <div id="pub-article-title" class="article-title"></div>
+        </div>
+        <div class="field">
+          <label>标题</label>
+          <input id="pub-title" type="text" maxlength="64" />
+        </div>
+        <div class="field">
+          <label>封面图</label>
+          <div class="cover-row">
+            <img id="pub-cover" class="cover-thumb" hidden />
+            <label class="btn small" for="cover-file" id="cover-label">上传封面</label>
+            <input type="file" id="cover-file" accept=".png,.jpg,.jpeg,.gif,.webp" hidden />
+            <span class="hint">未上传时，平台会使用正文首图或自动截取</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>发布平台</label>
+          <div id="pub-platforms" class="platform-checks"></div>
+          <div id="pub-extra" class="extra-fields"></div>
+        </div>
+        <div class="field">
+          <label>发布方式</label>
+          <label class="radio"><input type="radio" name="mode" value="confirm" checked />
+            预填 + 人工确认（推荐，自动填好后你在浏览器里点发布）</label>
+          <label class="radio"><input type="radio" name="mode" value="auto" />
+            全自动（直接自动点击发布按钮）</label>
+        </div>
+        <div id="pub-status" class="pub-status" hidden></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" id="modal-cancel">取消</button>
+        <button class="btn primary" id="pub-submit">开始发布</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 总览行编辑弹窗 -->
+  <div id="ov-edit-modal" class="modal-mask" hidden>
+    <div class="modal">
+      <div class="modal-head">
+        <h3>编辑发布记录</h3>
+        <button class="icon-btn" id="ov-edit-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label>媒体</label>
+          <div id="ov-edit-media" class="article-title"></div>
+        </div>
+        <div class="field">
+          <label>稿件标题 <span class="hint">（同一篇稿件的所有平台行共享）</span></label>
+          <input id="ov-edit-title" type="text" maxlength="64" />
+        </div>
+        <div class="field">
+          <label>日期 / 时间</label>
+          <div style="display:flex;gap:10px">
+            <input id="ov-edit-date" type="date" style="flex:1" />
+            <input id="ov-edit-time" type="time" style="flex:1" />
+          </div>
+        </div>
+        <div class="field">
+          <label>平台侧状态</label>
+          <select id="ov-edit-publish-status">
+            <option value="">（未设置）</option>
+            <option value="auditing">审核中</option>
+            <option value="published">审核通过</option>
+            <option value="scheduled">待发布</option>
+            <option value="rejected">审核未通过</option>
+            <option value="offline">已下线</option>
+            <option value="draft">草稿</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>媒体链接</label>
+          <input id="ov-edit-url" type="text" placeholder="https://…（平台公开链接，可直接点开）" />
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" id="ov-edit-cancel">取消</button>
+        <button class="btn primary" id="ov-edit-save">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
